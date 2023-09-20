@@ -2,7 +2,10 @@ import { useState, useRef } from "react";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 
-function FilePicker(props: { setVideoSource: (url: string) => void }) {
+function FilePicker(props: {
+  videoSource: string | null;
+  setVideoSource: (url: string) => void;
+}) {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.length) {
       const file = event.target.files[0];
@@ -13,7 +16,31 @@ function FilePicker(props: { setVideoSource: (url: string) => void }) {
     }
   };
 
-  return <input type="file" accept="video/mp4" onChange={handleFileChange} />;
+  return (
+    <div className="file-picker">
+      <video
+        ref={(ref) => {
+          if (ref) {
+            ref.src = props.videoSource || "";
+          }
+        }}
+        controls
+        style={{ width: "400px", height: "400px" }}
+      />
+      <div className="file-wrapper">
+        <input
+          type="file"
+          accept="video/mp4"
+          onChange={handleFileChange}
+          className="file-input"
+          id="fileInput"
+        ></input>
+        <label htmlFor="fileInput" className="file-label">
+          Upload File
+        </label>
+      </div>
+    </div>
+  );
 }
 
 function Converter(props: {
@@ -85,16 +112,7 @@ function App() {
   return (
     <>
       <h1>FFmpeg Wasm Demo</h1>
-      <FilePicker setVideoSource={setVideoSource} />
-      <video
-        ref={(ref) => {
-          if (ref) {
-            ref.src = videoSource || "";
-          }
-        }}
-        controls
-        style={{ width: "400px" }}
-      />
+      <FilePicker videoSource={videoSource} setVideoSource={setVideoSource} />
       <Converter videoSource={videoSource} setGifSource={setGifSource} />
       <GifPreview gifSource={gifSource} />
     </>
