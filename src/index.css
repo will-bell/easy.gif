@@ -25,10 +25,21 @@ a:hover {
 
 body {
   margin: 0;
+  padding: 0;
   display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  justify-content: center; /* Horizontally center children */
+  align-items: center;     /* Vertically center children */
+  min-height: 100vh;       /* Ensure the body takes up the full viewport height */
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 900px;       /* Limit the width */
+  padding: 2rem;
+  text-align: center;
 }
 
 h1 {
@@ -36,39 +47,20 @@ h1 {
   line-height: 1.1;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-/* This is a CSS selector that targets the button and input elements when the user hovers over it. */
-button:hover{
-  border-color: #f30000;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-.file-picker {
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* This centers the children horizontally */
-  width: 400px; /* This matches the width of the video */
-}
-.file-wrapper {
+.App {
   display: flex;
   width: 100%;
-  justify-content: center; /* This centers the children horizontally */
+  justify-content: space-between;
 }
 
-.file-input {
+.Selector, .Converter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 400px;
+}
+
+.hidden-file-input {
   position: absolute;
   top: 0;
   left: 0;
@@ -80,21 +72,26 @@ button:focus-visible {
   pointer-events: none; /* This ensures the file input doesn't interfere with the label's click event */
 }
 
-.file-label {
-  display: inline-block;
+.button-facade, button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 20px;
   background-color: #007BFF;
   color: white;
   border: none;
   border-radius: 4px;
-  font-size: 16px;
+  font-size: 1em;
   transition: background-color 0.3s;
   cursor: pointer;
   width: 100%; /* This ensures the label takes the full width of its parent */
+  height: 3em;
   box-sizing: border-box; /* This ensures padding and border are included in the element's total width and height */
+  text-align: center;
+  
 }
 
-.file-label:hover {
+.button-facade:hover, button:hover {
   background-color: #0056b3;
 }
 
@@ -105,8 +102,5 @@ button:focus-visible {
   }
   a:hover {
     color: #747bff;
-  }
-  button, .file-label {
-    background-color: #f9f9f9;
   }
 }
