@@ -7,16 +7,41 @@ function Selector(props: {
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const [dragging, setDragging] = useState(false);
+
+  const [videoSize, setVideoSize] = useState({ w: 0, h: 0 }); // Initialize video size to 0
+
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [maxPosition, setMaxPosition] = useState({ x: 0, y: -10 });
+
+  const [scale, setScale] = useState(1); // Initialize scale factor to 1
+  const [minScale, setMinScale] = useState(1);
+
+  const [posCrop, setPosCrop] = useState({ x: 0, y: 0 });
+  const [sizeCrop, setSizeCrop] = useState({ w: 400, h: 400 });
+
   useEffect(() => {
     if (videoRef.current !== null) {
       console.log("videoRef is set!", videoRef.current);
       // Now TypeScript knows that videoRef.current is non-null
+      videoRef.current.addEventListener("loadedmetadata", () => {
+        const { videoWidth, videoHeight } =
+          videoRef.current as HTMLVideoElement;
+
+        setVideoSize({ w: videoWidth, h: videoHeight });
+        console.log("videoWidth, videoHeight", videoWidth, videoHeight);
+
+        const defaultScale = Math.max(400 / videoWidth, 400 / videoHeight);
+        setMinScale(defaultScale);
+        setScale(defaultScale);
+
+        setMaxPosition({
+          x: -videoWidth * defaultScale + 400,
+          y: -videoHeight * defaultScale + 400,
+        });
+      });
     }
   }, []);
-
-  const [dragging, setDragging] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [scale, setScale] = useState(1); // Initialize scale factor to 1
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files?.length) {
@@ -38,26 +63,36 @@ function Selector(props: {
 
   const handleMouseMove = (e: React.MouseEvent<HTMLVideoElement>) => {
     if (dragging) {
-      const x = position.x + e.movementX;
-      const y = position.y + e.movementY;
-      setPosition({ x, y });
+      setPosition({
+        x: Math.max(Math.min(position.x + e.movementX, 0), maxPosition.x),
+        y: Math.max(Math.min(position.y + e.movementY, 0), maxPosition.y),
+      });
+      setPosCrop({
+        x: Math.abs(position.x) / scale,
+        y: Math.abs(position.y) / scale,
+      });
+      console.log("position, maxPosition", position, maxPosition);
     }
   };
 
-  // const handleZoomIn = () => {
-  //   setScale((prevScale) => prevScale * 1.1); // Increase scale by 10%
-  // };
-
-  // const handleZoomOut = () => {
-  //   setScale((prevScale) => prevScale / 1.1); // Decrease scale by 10%
-  // };
-
   const handleWheel = (e: React.WheelEvent<HTMLVideoElement>) => {
     if (e.deltaY < 0) {
-      setScale((prevScale) => prevScale * 1.01); // Zoom in
+      // Zoom in
+      setScale((prevScale) => prevScale * 1.01);
+      setMaxPosition({
+        x: -videoSize.w * scale + 400,
+        y: -videoSize.h * scale + 400,
+      });
     } else {
-      setScale((prevScale) => prevScale / 1.01); // Zoom out
+      // Zoom out
+      setScale((prevScale) => Math.max(prevScale / 1.01, minScale));
+      setMaxPosition({
+        x: -videoSize.w * scale + 400,
+        y: -videoSize.h * scale + 400,
+      });
     }
+    // Nico was here <3
+    setSizeCrop({ w: 400 / scale, h: 400 / scale });
   };
 
   return (
@@ -71,57 +106,44 @@ function Selector(props: {
         }}
       >
         <video
-          // ref={(ref) => {
-          //   if (ref) {
-          //     // default to the video in the assets directory
-          //     // ref.src = props.videoSource || "assets/video.mp4";
-          //     ref.src = "assets/video.mp4";
-          //   }
-          // }}
           ref={videoRef}
           src={videoSource}
           controls={false}
           style={{
-            position: "absolute",
-            cursor: dragging ? "grabbing" : "grab",
+            position: "relative",
             left: `${position.x}px`,
             top: `${position.y}px`,
+            // TODO zoom in on the cursor position, not the top-left of the video
             transform: `scale(${scale})`, // Apply the scale
+            transformOrigin: "0 0", // Transform from the top left
           }}
           onMouseDown={handleMouseDown}
           onMouseUp={handleMouseUp}
           onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
         />
-        <div
-          style={{
-            position: "absolute",
-            bottom: "0",
-            width: "100%",
-            display: "flex",
-            justifyContent: "center",
-          }}
-        >
-          {/* Custom video controls here */}
-          {/* <button onClick={handleZoomIn}>Zoom In</button>
-          <button onClick={handleZoomOut}>Zoom Out</button> */}
-          <button onClick={() => videoRef.current?.play()}>Play</button>
-          <button onClick={() => videoRef.current?.pause()}>Pause</button>
-        </div>
       </div>
-
-      <>
-        <input
-          type="file"
-          accept="video/mp4"
-          onChange={handleFileChange}
-          className="hidden-file-input"
-          id="fileInput"
-        ></input>
-        <label htmlFor="fileInput" className="button-facade">
-          Upload File
-        </label>
-      </>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+        }}
+      >
+        <button onClick={() => videoRef.current?.play()}>Play</button>
+        <button onClick={() => videoRef.current?.pause()}>Pause</button>
+      </div>
+      <input
+        type="file"
+        accept="video/mp4"
+        onChange={handleFileChange}
+        className="hidden-file-input"
+        id="fileInput"
+      ></input>
+      <label htmlFor="fileInput" className="button-facade">
+        Upload File
+      </label>
     </div>
   );
 }

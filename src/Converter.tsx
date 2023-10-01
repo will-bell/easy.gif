@@ -40,7 +40,15 @@ function Converter(props: { videoSource: string | null }) {
       ffmpeg.on("progress", ({ progress }) => {
         console.log("progress", progress);
       });
-      await ffmpeg.exec(["-i", "input.mp4", "-r", "10", "output.gif"]);
+      await ffmpeg.exec([
+        "-i",
+        "input.mp4",
+        "-r",
+        "10", // 10fps
+        "-t",
+        "10", // Cap it at 10 seconds for now
+        "output.gif",
+      ]);
 
       const outputGifData = await ffmpeg.readFile("output.gif");
       const data = new Uint8Array(outputGifData as ArrayBuffer);
