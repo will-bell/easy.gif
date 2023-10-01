@@ -6,13 +6,14 @@ function Selector(props: {
   setVideoSource: (url: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const viewPortRef = useRef<HTMLDivElement>(null);
 
   const [dragging, setDragging] = useState(false);
 
   const [videoSize, setVideoSize] = useState({ w: 0, h: 0 }); // Initialize video size to 0
 
   const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [maxPosition, setMaxPosition] = useState({ x: 0, y: -10 });
+  const [maxPosition, setMaxPosition] = useState({ x: 0, y: 0 });
 
   const [scale, setScale] = useState(1); // Initialize scale factor to 1
   const [minScale, setMinScale] = useState(1);
@@ -29,7 +30,6 @@ function Selector(props: {
           videoRef.current as HTMLVideoElement;
 
         setVideoSize({ w: videoWidth, h: videoHeight });
-        console.log("videoWidth, videoHeight", videoWidth, videoHeight);
 
         const defaultScale = Math.max(400 / videoWidth, 400 / videoHeight);
         setMinScale(defaultScale);
@@ -38,6 +38,11 @@ function Selector(props: {
         setMaxPosition({
           x: -videoWidth * defaultScale + 400,
           y: -videoHeight * defaultScale + 400,
+        });
+
+        setPosition({
+          x: (-videoWidth * defaultScale + 400) / 2,
+          y: (-videoHeight * defaultScale + 400) / 2,
         });
       });
     }
@@ -71,33 +76,55 @@ function Selector(props: {
         x: Math.abs(position.x) / scale,
         y: Math.abs(position.y) / scale,
       });
-      console.log("position, maxPosition", position, maxPosition);
     }
   };
 
   const handleWheel = (e: React.WheelEvent<HTMLVideoElement>) => {
+    const viewPortRect = viewPortRef.current?.getBoundingClientRect();
+    if (!viewPortRect) {
+      return;
+    }
+
+    let scaleFactor = 1;
     if (e.deltaY < 0) {
       // Zoom in
-      setScale((prevScale) => prevScale * 1.01);
-      setMaxPosition({
-        x: -videoSize.w * scale + 400,
-        y: -videoSize.h * scale + 400,
-      });
+      if (scale < 10) {
+        scaleFactor = 1.05;
+      }
     } else {
       // Zoom out
-      setScale((prevScale) => Math.max(prevScale / 1.01, minScale));
-      setMaxPosition({
-        x: -videoSize.w * scale + 400,
-        y: -videoSize.h * scale + 400,
-      });
+      if (scale > minScale) {
+        scaleFactor = 1 / 1.05;
+      }
     }
+    // Still need to apply limits
+    const newScale = Math.min(Math.max(scale * scaleFactor, minScale), 10);
+
+    // Need to calculate this to account for drift when we hit the limits
+    const correctScaleFactor = newScale / scale;
+
+    const newMaxX = -videoSize.w * newScale + 400;
+    const newMaxY = -videoSize.h * newScale + 400;
+
+    // Zoom in and out centered on the mouse position
+    const mouseX = e.clientX - viewPortRect.left;
+    const mouseY = e.clientY - viewPortRect.top;
+    const newX = mouseX + correctScaleFactor * (position.x - mouseX);
+    const newY = mouseY + correctScaleFactor * (position.y - mouseY);
+
+    setScale(newScale);
     // Nico was here <3
-    setSizeCrop({ w: 400 / scale, h: 400 / scale });
+    setPosition({
+      x: Math.max(Math.min(newX, 0), newMaxX),
+      y: Math.max(Math.min(newY, 0), newMaxY),
+    });
+    setMaxPosition({ x: newMaxX, y: newMaxY });
   };
 
   return (
     <div className="Selector">
       <div
+        ref={viewPortRef}
         style={{
           overflow: "hidden",
           position: "relative",
