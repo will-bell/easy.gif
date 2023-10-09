@@ -3,7 +3,7 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 import waitingSource from "./assets/waiting.gif";
 
-function Converter(props: { videoSource: string | null }) {
+function Converter(props: { videoSource: string | null; posCrop: { x: number, y: number }; sizeCrop: { w: number, h: number } }) {
   const [loaded, setLoaded] = useState(false);
   const [gifSource, setGifSource] = useState<string | null>(null);
 
@@ -35,6 +35,7 @@ function Converter(props: { videoSource: string | null }) {
     if (props.videoSource) {
       console.log("videoSource", props.videoSource);
       await ffmpeg.writeFile("input.mp4", await fetchFile(props.videoSource));
+      ffmpeg.on("log", (msg) => console.log(msg));
 
       // Convert the video to a Gif with 10fps framerate
       ffmpeg.on("progress", ({ progress }) => {
@@ -47,6 +48,9 @@ function Converter(props: { videoSource: string | null }) {
         "10", // 10fps
         "-t",
         "10", // Cap it at 10 seconds for now
+        // Crop the video based on the position and size of the crop box
+        "-filter:v",
+        `crop=${props.sizeCrop.w}:${props.sizeCrop.h}:${props.posCrop.x}:${props.posCrop.y}`,
         "output.gif",
       ]);
 
