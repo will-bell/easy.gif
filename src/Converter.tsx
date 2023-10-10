@@ -34,16 +34,17 @@ function Converter(props: { videoSource: string | null; posCrop: { x: number, y:
 
     if (props.videoSource) {
       console.log("videoSource", props.videoSource);
-      await ffmpeg.writeFile("input.mp4", await fetchFile(props.videoSource));
-      ffmpeg.on("log", (msg) => console.log(msg));
+      await ffmpeg.writeFile("input", await fetchFile(props.videoSource));
 
-      // Convert the video to a Gif with 10fps framerate
       ffmpeg.on("progress", ({ progress }) => {
         console.log("progress", progress);
       });
+      ffmpeg.on("log", ({ message }) => { console.log("log", message); })
+      // Convert the video to a Gif with 10fps framerate
+      // TODO: add palettegen and paletteuse filters to reduce file size and improve quality
       await ffmpeg.exec([
         "-i",
-        "input.mp4",
+        "input",
         "-r",
         "10", // 10fps
         "-t",

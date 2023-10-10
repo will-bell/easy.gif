@@ -1,15 +1,18 @@
 import React, { useState, useRef, useEffect } from "react";
-import videoSource from "./assets/happiness.mp4";
+import { Slider } from "@mui/material";
 
-function Selector(props: {
-  videoSource: string | null;
-  setVideoSource: (url: string) => void;
+function VideoPreview(props: {
+  videoSource: string,
+  videoRef: React.RefObject<HTMLVideoElement>,
+  viewPortRef: React.RefObject<HTMLDivElement>,
 
-  setPosCrop: (pos: { x: number; y: number }) => void;
-  setSizeCrop: (size: { w: number; h: number }) => void;
+  setPosCrop: (pos: { x: number, y: number }) => void,
+  setSizeCrop: (size: { w: number, h: number }) => void,
+
+  videoTrim: { start: number, end: number },
+  setVideoTrim: (trim: { start: number, end: number }) => void,
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const viewPortRef = useRef<HTMLDivElement>(null);
+  const { videoSource, videoRef, viewPortRef, setPosCrop, setSizeCrop, videoTrim, setVideoTrim } = props;
 
   const [dragging, setDragging] = useState(false);
 
@@ -22,60 +25,73 @@ function Selector(props: {
   const [minScale, setMinScale] = useState(1);
 
   useEffect(() => {
-    if (videoRef.current !== null) {
-      console.log("videoRef is set!", videoRef.current);
-      // Now TypeScript knows that videoRef.current is non-null
-      videoRef.current.addEventListener("loadedmetadata", () => {
-        const { videoWidth, videoHeight } =
-          videoRef.current as HTMLVideoElement;
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
 
-        console.log(videoWidth, videoHeight)
+    const handleVideoLoad = () => {
+      const { videoWidth, videoHeight, duration } =
+        video as HTMLVideoElement;
 
-        setVideoSize({ w: videoWidth, h: videoHeight });
+      setVideoSize({ w: videoWidth, h: videoHeight });
+      setVideoTrim({ start: 0, end: duration });
 
-        const defaultScale = Math.max(400 / videoWidth, 400 / videoHeight);
-        setMinScale(defaultScale);
-        setScale(defaultScale);
+      const defaultScale = Math.max(400 / videoWidth, 400 / videoHeight);
+      setMinScale(defaultScale);
+      setScale(defaultScale);
 
-        setMaxPosition({
-          x: -videoWidth * defaultScale + 400,
-          y: -videoHeight * defaultScale + 400,
-        });
-
-        const defaultPosition = {
-          x: (-videoWidth * defaultScale + 400) / 2,
-          y: (-videoHeight * defaultScale + 400) / 2,
-        }
-
-        setPosition(defaultPosition);
-
-        props.setPosCrop({
-          x: Math.abs(defaultPosition.x) / defaultScale,
-          y: Math.abs(defaultPosition.y) / defaultScale,
-        });
-        props.setSizeCrop({
-          w: 400 / defaultScale,
-          h: 400 / defaultScale,
-        })
+      setMaxPosition({
+        x: -videoWidth * defaultScale + 400,
+        y: -videoHeight * defaultScale + 400,
       });
-    }
-  }, []);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files?.length) {
-      console.log("got new file", event.target.files[0])
-      const file = event.target.files[0];
-      if (file) {
-        const objectURL = URL.createObjectURL(file);
-        props.setVideoSource(objectURL);
-
-        // Also update the Video ref
-        if (videoRef.current !== null) {
-          videoRef.current.src = objectURL;
-        }
+      const defaultPosition = {
+        x: (-videoWidth * defaultScale + 400) / 2,
+        y: (-videoHeight * defaultScale + 400) / 2,
       }
+
+      setPosition(defaultPosition);
+
+      setPosCrop({
+        x: Math.abs(defaultPosition.x) / defaultScale,
+        y: Math.abs(defaultPosition.y) / defaultScale,
+      });
+      setSizeCrop({
+        w: 400 / defaultScale,
+        h: 400 / defaultScale,
+      })
     }
-  };
+    video.addEventListener("loadedmetadata", handleVideoLoad);
+
+    // Cleanup: remove event listeners and any other necessary cleanup.
+    return () => {
+      video.removeEventListener("loadedmetadata", handleVideoLoad);
+
+    };
+    //eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [videoSource]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    const handleTimeUpdate = () => {
+      if (video.currentTime >= videoTrim.end) {
+        video.currentTime = videoTrim.start;
+      }
+    };
+
+    video.addEventListener('timeupdate', handleTimeUpdate);
+
+    video.currentTime = videoTrim.start;
+
+    return () => {
+      video.removeEventListener('timeupdate', handleTimeUpdate);
+    }
+  }, [videoTrim, videoRef]);
 
   const handleMouseDown = () => {
     setDragging(true);
@@ -93,11 +109,11 @@ function Selector(props: {
       }
       setPosition(newPosition);
 
-      props.setPosCrop({
+      setPosCrop({
         x: Math.abs(newPosition.x) / scale,
         y: Math.abs(newPosition.y) / scale,
       });
-      props.setSizeCrop({
+      setSizeCrop({
         w: 400 / scale,
         h: 400 / scale,
       })
@@ -147,14 +163,67 @@ function Selector(props: {
     setPosition(newPosition);
     setMaxPosition({ x: newMaxX, y: newMaxY });
 
-    props.setPosCrop({
+    setPosCrop({
       x: Math.abs(newPosition.x) / newScale,
       y: Math.abs(newPosition.y) / newScale
     })
-    props.setSizeCrop({
+    setSizeCrop({
       w: 400 / newScale,
       h: 400 / newScale
     })
+  };
+
+
+  return (<video
+    ref={videoRef}
+    src={videoSource}
+    controls={false}
+    autoPlay={true}
+    style={{
+      position: "relative",
+      left: `${position.x}px`,
+      top: `${position.y}px`,
+      // TODO: make width and height configurable through draggable borders on the viewport
+      transform: `scale(${scale})`, // Apply the scale
+      transformOrigin: "0 0", // Transform from the top left
+    }}
+    // Set start and end times according to videoTrim
+    onMouseDown={handleMouseDown}
+    onMouseUp={handleMouseUp}
+    onMouseMove={handleMouseMove}
+    onMouseLeave={handleMouseUp}
+    onWheel={handleWheel}
+  />)
+}
+
+function Selector(props: {
+  videoSource: string;
+  setVideoSource: (url: string) => void;
+
+  setPosCrop: (pos: { x: number; y: number }) => void;
+  setSizeCrop: (size: { w: number; h: number }) => void;
+
+  videoTrim: { start: number; end: number };
+  setVideoTrim: (trim: { start: number; end: number }) => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const viewPortRef = useRef<HTMLDivElement>(null);
+
+  const { videoSource, setVideoSource, setPosCrop, setSizeCrop, videoTrim, setVideoTrim } = props;
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files?.length) {
+      console.log("got new file", event.target.files[0])
+      const file = event.target.files[0];
+      if (file) {
+        const objectURL = URL.createObjectURL(file);
+        setVideoSource(objectURL);
+
+        if (videoRef.current !== null) {
+          videoRef.current.src = objectURL;
+        }
+      }
+    }
   };
 
   return (
@@ -168,25 +237,33 @@ function Selector(props: {
           height: "400px",
         }}
       >
-        <video
-          ref={videoRef}
-          src={videoSource}
-          controls={false}
-          style={{
-            position: "relative",
-            left: `${position.x}px`,
-            top: `${position.y}px`,
-            // TODO zoom in on the cursor position, not the top-left of the video
-            transform: `scale(${scale})`, // Apply the scale
-            transformOrigin: "0 0", // Transform from the top left
-          }}
-          onMouseDown={handleMouseDown}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
-          onMouseLeave={handleMouseUp}
-          onWheel={handleWheel}
+        <VideoPreview
+          videoSource={videoSource}
+          videoRef={videoRef}
+          viewPortRef={viewPortRef}
+          setPosCrop={setPosCrop}
+          setSizeCrop={setSizeCrop}
+          videoTrim={videoTrim}
+          setVideoTrim={setVideoTrim}
         />
       </div>
+      <Slider
+        // TODO add accessiblity labels
+        min={0}
+        max={videoRef.current?.duration || 100}
+        value={[videoTrim.start, videoTrim.end]}
+        onChange={(_, newVideoTrim: number | number[]) => {
+          if (newVideoTrim instanceof Array && newVideoTrim.length === 2) {
+            setVideoTrim({ start: newVideoTrim[0], end: newVideoTrim[1] })
+          }
+        }}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(value) => {
+          const minutes = Math.floor(value / 60);
+          const seconds = Math.floor(value % 60);
+          return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }}
+      />
       <div
         style={{
           width: "100%",
