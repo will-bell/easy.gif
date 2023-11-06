@@ -3,7 +3,12 @@ import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { toBlobURL, fetchFile } from "@ffmpeg/util";
 import waitingSource from "./assets/waiting.gif";
 
-function Converter(props: { videoSource: string | null; posCrop: { x: number, y: number }; sizeCrop: { w: number, h: number } }) {
+function Converter(props: {
+  videoSource: string | null;
+  viewPortSize: { w: number, h: number };
+  posCrop: { x: number, y: number };
+  sizeCrop: { w: number, h: number };
+}) {
   const [loaded, setLoaded] = useState(false);
   const [gifSource, setGifSource] = useState<string | null>(null);
 
@@ -70,8 +75,8 @@ function Converter(props: { videoSource: string | null; posCrop: { x: number, y:
         src={gifSource || waitingSource}
         // Prevent the image from being squished
         style={{
-          width: "400px",
-          height: "400px",
+          width: `${props.viewPortSize.w}px`,
+          height: `${props.viewPortSize.h}px`,
           overflow: "hidden",
           objectFit: "cover",
         }}

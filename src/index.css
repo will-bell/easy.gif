@@ -1,106 +1,61 @@
 :root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-text-size-adjust: 100%;
+  /* Reset some default values */
+  font-size: 16px;
+  font-family: "Arial", sans-serif;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
-}
-
+#root,
 body {
   margin: 0;
   padding: 0;
-  display: flex;
-  justify-content: center; /* Horizontally center children */
-  align-items: center;     /* Vertically center children */
-  min-height: 100vh;       /* Ensure the body takes up the full viewport height */
-}
-
-#root {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  height: 100%;
   width: 100%;
-  max-width: 900px;       /* Limit the width */
-  padding: 2rem;
-  text-align: center;
+  overflow-x: hidden; /* Avoid horizontal scrolling */
+  background-color: rgb(244, 244, 244);
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  text-align: center; /* Center the title horizontally */
+  padding: 20px 0; /* Give it some vertical space */
 }
 
 .App {
   display: flex;
-  width: 100%;
-  justify-content: space-between;
-}
-
-.Selector, .Converter {
-  display: flex;
   flex-direction: column;
-  align-items: center;
-  width: 400px;
+  justify-content: flex-start;
+  align-items: center; /* Center the VideoContainer vertically */
+  width: 100vw; /* Take up 80% of the viewport width */
+  height: 80vh; /* Take up the full viewport height */
+  position: relative; /* This will be handy when you add controls later */
 }
 
-.hidden-file-input {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 0.1px;
-  height: 0.1px;
-  opacity: 0;
+.VideoContainer {
+  display: block;
+  position: relative;
   overflow: hidden;
-  z-index: -1; /* This ensures the file input is behind the label */
-  pointer-events: none; /* This ensures the file input doesn't interfere with the label's click event */
+
+  width: 80%;
+  height: 80%;
 }
 
-.button-facade, button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px 20px;
-  background-color: #007BFF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1em;
-  transition: background-color 0.3s;
-  cursor: pointer;
-  width: 100%; /* This ensures the label takes the full width of its parent */
-  height: 3em;
-  box-sizing: border-box; /* This ensures padding and border are included in the element's total width and height */
-  text-align: center;
-  
+.Cropper {
+  position: absolute; /* So we can position it over the video */
+  display: block; /* Remove any default margins/paddings around the video */
+
+  box-shadow: 0 0 0 1000px rgb(244, 244, 244, 0.8);
+  transform: none !important;
+  will-change: unset !important;
+
+  width: 100%;
+  height: 100%;
 }
 
-.button-facade:hover, button:hover {
-  background-color: #0056b3;
-}
+.VideoPreview {
+  position: absolute; /* I want this here so I can set the position of the video, but why does this break the video? */
+  display: block; /* Remove any default margins/paddings around the vi`deo */
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
+  pointer-events: none;
+
+  width: 100%;
+  max-height: 100%;
 }
