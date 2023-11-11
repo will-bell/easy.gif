@@ -5,9 +5,9 @@ import waitingSource from "./assets/waiting.gif";
 
 function Converter(props: {
   videoSource: string | null;
-  viewPortSize: { w: number, h: number };
-  posCrop: { x: number, y: number };
-  sizeCrop: { w: number, h: number };
+  viewPortSize: { w: number; h: number };
+  posCrop: { x: number; y: number };
+  sizeCrop: { w: number; h: number };
 }) {
   const [loaded, setLoaded] = useState(false);
   const [gifSource, setGifSource] = useState<string | null>(null);
@@ -44,7 +44,9 @@ function Converter(props: {
       ffmpeg.on("progress", ({ progress }) => {
         console.log("progress", progress);
       });
-      ffmpeg.on("log", ({ message }) => { console.log("log", message); })
+      ffmpeg.on("log", ({ message }) => {
+        console.log("log", message);
+      });
       // Convert the video to a Gif with 10fps framerate
       // TODO: add palettegen and paletteuse filters to reduce file size and improve quality
       await ffmpeg.exec([

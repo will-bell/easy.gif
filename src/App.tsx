@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import happinessSource from "./assets/happiness.mp4";
+import timelapseSource from "./assets/timelapse.mp4";
 import { Paper } from "@mui/material";
 import VideoPreview from "./VideoPreview";
 import Cropper from "./Cropper";
@@ -16,7 +16,7 @@ function App() {
   }, []); // Empty dependency array means this useEffect runs once after mount
 
   const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoSource, setVideoSource] = useState<string>(happinessSource);
+  const [videoSource, setVideoSource] = useState<string>(timelapseSource);
   const [videoSize, setVideoSize] = useState({ w: 0, h: 0 }); // Initialize video size to 0
 
   const [viewPos, setViewPos] = useState({ x: 0, y: 0 });
@@ -41,9 +41,10 @@ function App() {
             videoRef={videoRef}
             videoSource={videoSource}
             setVideoSize={setVideoSize}
-          />
+          ></VideoPreview>
           <Cropper
             videoSize={videoSize}
+            videoRef={videoRef}
             viewPos={viewPos}
             setViewPos={setViewPos}
             viewSize={viewSize}

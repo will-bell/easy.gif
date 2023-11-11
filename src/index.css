@@ -39,15 +39,14 @@ h1 {
 }
 
 .Cropper {
-  position: absolute; /* So we can position it over the video */
+  position: absolute;
   display: block; /* Remove any default margins/paddings around the video */
 
   box-shadow: 0 0 0 1000px rgb(244, 244, 244, 0.8);
-  transform: none !important;
-  will-change: unset !important;
 
-  width: 100%;
-  height: 100%;
+  /* width: 100%;
+  height: 100%; */
+  z-index: 10;
 }
 
 .VideoPreview {
